@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <stdlib.h> 
+#include <time.h>
 
 using namespace std;
 //Clase carta
@@ -58,6 +60,7 @@ public:
 	T popC();
 	bool addC(T carta);
 	void print();
+	void shuffle();
 };
 
 /*Función pop para sacar la carta que
@@ -86,11 +89,37 @@ template <class T>
 void mazo<T>::print() {
 	Node<T>*p = head;
 	while (p) {
-		cout << p->dato << "\t";
+		cout << p->dato << " ";
 		p = p->next;
 	}
 	cout << endl;
 
+}
+
+/*Funcion para mezclar el mazo*/
+template <class T>
+void mazo<T>::shuffle() {	
+
+	for (int i = 0; i < 52; i++) {
+		srand(time(NULL)+i);
+		//iteradores
+		int j2 = rand() % 52;
+		int k2 = rand() % 52;
+		
+		int j, k;
+		//Punteros a nodos
+		Node<T>*p = head;
+		Node<T>*q = head;
+		//Hacemos bucles
+		for (p = head, j = 0; j < j2; j++, p = p->next);
+		for (q = head, k = 0; k < k2; k++, q = q->next);
+		//Hacemos el intercambio
+		
+		T aux = p->dato;
+		p->dato = q->dato;
+		q->dato = aux;
+		
+	}
 }
 
 /*Clase Cartasmano:
@@ -138,7 +167,7 @@ template <class T>
 void cartasMano<T>::print() {
 	for (Node<T>*p = head;
 		p != NULL;
-		p = p->next) cout << p->dato << "\t";
+		p = p->next) cout << p->dato << " ";
 
 	cout << endl;
 }
@@ -150,14 +179,17 @@ tiene como propiedades las cartas que
 tiene en mano y sus puntos*/
 template <class T>
 class Jugador {	
-	cartasMano<T> misCartas;
-	int puntos;
+	cartasMano<T> misCartas;	
 public:
+	int puntos;
 	string nombre;
 	Jugador(string name) : puntos(0), nombre(name) {};
 	bool takeCard(T carta);
 	T dropCard(int sel);
 	void show();
+	int viewPoints();
+
+	/*Sobrecarga de cout para imprimir los nombres de los jugadores*/
 	friend ostream & operator << (ostream& out, const Jugador &j) {
 		out << j.nombre;
 		return out;
@@ -190,6 +222,8 @@ void Jugador<T>::show() {
 	misCartas.print();
 }
 
+
+
 /*Dnode:
 Nodo doblemente enlazado, surge esta necesidad,
 ya que puede cambiar el sentido en el que juegan los jugadores*/
@@ -208,10 +242,10 @@ Lista donde almacenamos los jugadores
 es doblemente enlazada, ya que el orden de juego
 puede variar*/
 template <class T>
-class listaJugadores {
+class listaJugadores {	
+public:
 	DNode<T>*head;
 	DNode<T>* tail;
-public:
 	listaJugadores() :head(NULL), tail(NULL) {};
 	bool addPlayer(string name);
 	void print();
@@ -257,7 +291,59 @@ void listaJugadores<T>::print() {
 	cout << q->dato << endl;
 }
 
+
+class ochoLocos {
+public:
+	/*Baraja boca abajo*/
+	mazo<carta> baraja;
+	/*Baraja en mesa (boca arriba)*/
+	mazo<carta> mesa;	
+	/*Lista de jugadores*/
+	listaJugadores<Jugador<carta> > players;
+
+	/*Constructor*/
+	ochoLocos(int num);
+};
+
+ochoLocos::ochoLocos(int num) {
+	/*Insertamos todas las cartas en el mazo*/
+	char palos[4] = { 't','c','e','d' };
+	for (int i = 0; i < 4; i++) {
+		for (int j = 1; j <= 13; j++) {
+			baraja.addC(carta(j, palos[i]));
+		}
+	}
+	baraja.print();	
+
+	/*Las mezclamos*/
+	baraja.shuffle();
+	baraja.print();
+
+	/*Insertamos jugadores en nuestras listas*/
+	for (int i = 0; i < num; i++) {
+		players.addPlayer("A");
+	}
+	
+	/*Repartimos las cartas a los jugadores*/
+	int totalCartas;
+	if (num == 2)  totalCartas = 7;
+	else totalCartas = 8;
+	DNode<Jugador<carta> > *actual = players.head;
+	for (int i = 0; i < num*totalCartas; i++) {
+		(actual->dato).takeCard(baraja.popC());		
+		actual = actual->next;
+	}
+	actual = players.head;
+	while (actual->next != players.head) {
+		(actual->dato).show();
+		actual = actual->next;
+	}
+	(actual->dato).show();	
+}
+
 int main(){
+
+	ochoLocos mijuego(5);
 
 	return 0;
 }
